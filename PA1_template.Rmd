@@ -5,58 +5,85 @@ output:
     keep_md: true
 ---
 
-## load Libraries
-```{r packages, echo=TRUE}
-library(tidyverse)
-library(ggplot2)
+**loading Libraries**
+
+```{r packages, echo=TRUE, warning=FALSE, message=FALSE}
+
+  library(tidyverse)
+  library(ggplot2)
+
 ```
 
-## load data
+
+**Reading dataset and processing data**
 
 ```{r loaddata, echo=TRUE}
 
-  activity_data <- read.csv("activity.csv") 
+                if (file.exists("activity.csv")) {
+                  print("Activity Data Loaded")
+                } else {
+                  unzip("activity.zip")
+                  print("Unzipped & Loaded Activity Data")
+                }
+# Cleanup data
+                activity_dta <-  read.csv("activity.csv") 
 
-  activity_data$date <- as.Date(activity_data$date)
-  
-                        print(head(activity_data))
-                        
-  activity <- activity_data %>% na.omit() %>%
-                          group_by(date) %>%
-                          summarize(daily_steps = sum(steps))
-                        print(head(activity))
-                                                
+                activity_dta$date <- as.Date(activity_dta$date)
+                         actByDate <- activity_dta %>% 
+                                        na.omit() %>%
+                                  group_by(date) %>%
+                                        summarize(daily_steps = sum(steps))
+                                        print(head(actByDate))
+
 ```
 
-## Histogram
-
+**Histogram of the total number of steps taken each day**
 
 ```{r hist}
-ggplot(data = activity, aes(x = daily_steps)) + geom_histogram(binwidth = 1000)
+                ggplot(data = actByDate,
+                      aes(x = daily_steps)) +
+                      geom_histogram(binwidth = 1000,
+                                     fill = "seagreen",
+                                     color = "orange") +
+                                     xlab("Daily Steps")+
+                                     ylab("Frequency")
 
 ```
 
-
-## What is mean total number of steps taken per day?
+**Mean and median number of steps taken each day**
 
 ```{r meanactivity, echo=TRUE}
 
-  paste0("mean total number of steps taken per day =  ", mean(activity$daily_steps))
+                paste0("mean total number of steps taken per day =  ", mean(actByDate$daily_steps))
 
-```
-## What is the average daily activity pattern?
-
-```{r averageplot}
-
-ggplot(data = activity, aes(date, daily_steps)) + geom_line(color = "#00AFBB", size = 2)
+                paste0("average number of steps taken per day =  ", median(actByDate$daily_steps))
 
 ```
 
+**Average Daily activity pattern**
+```{r avg_pattern}
+                
+                actByInterval <- activity_dta %>% 
+                                    na.omit() %>%
+                              group_by(interval) %>%
+                                        summarize(daily_avge = mean(steps))
+                                        print(head(actByInterval))
+                                        
+# Time series of daily steps             
+                                        
+                activity_ts <- actByDate %>% ts()     
+                               print(head(activity_ts))
+                                        
 
-## Imputing missing values
+                # ggplot(activity_dta, aes(x = interval))
+
+
+```
+
+**Code to describe and show a strategy for imputing missing data**
 
 ```{r NAValues}
-sum(is.na(activity_data))
+                 sum(is.na(activity_dta))
 
 ```
 

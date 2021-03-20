@@ -5,21 +5,59 @@ output:
     keep_md: true
 ---
 
+## load Libraries
+```{r packages, echo=TRUE}
+library(tidyverse)
+library(ggplot2)
+```
 
-## Loading and preprocessing the data.
+## load data
 
+```{r loaddata, echo=TRUE}
+
+  activity_data <- read.csv("activity.csv") 
+
+  activity_data$date <- as.Date(activity_data$date)
+  
+                        print(head(activity_data))
+                        
+  activity <- activity_data %>% na.omit() %>%
+                          group_by(date) %>%
+                          summarize(daily_steps = sum(steps))
+                        print(head(activity))
+                                                
+```
+
+## Histogram
+
+
+```{r hist}
+ggplot(data = activity, aes(x = daily_steps)) + geom_histogram(binwidth = 1000)
+
+```
 
 
 ## What is mean total number of steps taken per day?
 
+```{r meanactivity, echo=TRUE}
 
+  paste0("mean total number of steps taken per day =  ", mean(activity$daily_steps))
 
+```
 ## What is the average daily activity pattern?
 
+```{r averageplot}
+
+ggplot(data = activity, aes(date, daily_steps)) + geom_line(color = "#00AFBB", size = 2)
+
+```
 
 
 ## Imputing missing values
 
+```{r NAValues}
+sum(is.na(activity_data))
 
+```
 
 ## Are there differences in activity patterns between weekdays and weekends?

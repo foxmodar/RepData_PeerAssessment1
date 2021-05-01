@@ -5,19 +5,21 @@ output:
     keep_md: true
 ---
 
-**loading Libraries**
+> #### **Loading Libraries**
 
 ```{r packages, echo=TRUE, warning=FALSE, message=FALSE}
 
   library(tidyverse)
   library(ggplot2)
+  library(lubridate)
 
 ```
 
 
-**Reading dataset and processing data**
+> #### **Reading dataset and processing data**
 
-```{r loaddata, echo=TRUE}
+```{r loaddata, echo=TRUE, message=FALSE}
+# Check if data unzipped and ready for analysis.
 
                 if (file.exists("activity.csv")) {
                   print("Activity Data Loaded")
@@ -25,66 +27,126 @@ output:
                   unzip("activity.zip")
                   print("Unzipped & Loaded Activity Data")
                 }
-# Cleanup data
+# Group data by date, remove NAs, and summarize by the total daily steps. 
+
                 activity_dta <-  read.csv("activity.csv") 
 
-                activity_dta$date <- as.Date(activity_dta$date)
-                         actByDate <- activity_dta %>% 
-                                        na.omit() %>%
-                                  group_by(date) %>%
-                                        summarize(daily_steps = sum(steps))
-                                        print(head(actByDate))
+           activity_dta$date <- as.Date(activity_dta$date)
+                
+# Total Steps per day                
+                   actByDate <- activity_dta %>% 
+                                  na.omit() %>%
+                            group_by(date) %>%
+                                summarize(daily_steps = sum(steps))
+                                
+                   print(head(actByDate))
 
 ```
 
-**Histogram of the total number of steps taken each day**
 
-```{r hist}
+> #### **Histogram of the total number of steps taken each day**
+
+```{r hist, warning=FALSE}
+# Histogram of total daily steps 
+
                 ggplot(data = actByDate,
                       aes(x = daily_steps)) +
-                      geom_histogram(binwidth = 1000,
+                      geom_histogram(binwidth = 3000, 
                                      fill = "seagreen",
                                      color = "orange") +
                                      xlab("Daily Steps")+
-                                     ylab("Frequency")
+                                     ylab("Frequency")+
+                                     labs(title = "Frequency of total daily steps")+
+                                     theme(plot.title = element_text(hjust = 0.5))  
 
 ```
 
-**Mean and median number of steps taken each day**
+> #### **Mean and median number of steps taken each day**
 
 ```{r meanactivity, echo=TRUE}
 
-                paste0("mean total number of steps taken per day =  ", mean(actByDate$daily_steps))
+                paste0("mean total number of steps taken per day =  ", round(mean(actByDate$daily_steps),2))
 
                 paste0("average number of steps taken per day =  ", median(actByDate$daily_steps))
 
 ```
 
-**Average Daily activity pattern**
-```{r avg_pattern}
+> #### **Average Daily activity pattern**
+
+```{r avg_pattern, message=FALSE}
+
+# Group data by interval, remove NAs, and summarize by the mean of daily steps.
                 
                 actByInterval <- activity_dta %>% 
                                     na.omit() %>%
                               group_by(interval) %>%
                                         summarize(daily_avge = mean(steps))
-                                        print(head(actByInterval))
+                                       
+                                 print(head(actByInterval))
                                         
-# Time series of daily steps             
-                                        
-                activity_ts <- actByDate %>% ts()     
-                               print(head(activity_ts))
-                                        
-
-                # ggplot(activity_dta, aes(x = interval))
-
+# Time series of average daily steps      
+# Format the interval to 4 char                 
+                actByInterval$interval <- sprintf("%04d", actByInterval$interval)
+# convert to time
+                actByInterval$interval <- as.character(format(strptime(actByInterval$interval,
+                                                       format="%H%M"), format = "%H:%M"))%>%
+                                          parse_time(actByInterval$interval, format = "%H:%M")
+                
+# Plot show the time of the day on X and the average daily on Y.
+                
+                # Define the highest average interval
+                
+                max_row <- filter(actByInterval, daily_avge == max(daily_avge))
+                max_avge_time <- max_row[1] ; max_avge <-  max_row[2]
+ 
+               ggplot(actByInterval,
+                      aes(x=`interval`)) +
+                      geom_line(aes(y=daily_avge))+
+                      xlab("Time of the day(Interval)")+ylab("Daily Average")+
+                      labs(title = "Average daily steps by interval")+
+                      theme(plot.title = element_text(hjust = 0.5))+
+                      geom_point(data=filter(actByInterval, daily_avge == max(daily_avge)),
+                                 aes(x = `interval`, y = daily_avge), color = "red", size = 5) 
 
 ```
 
-**Code to describe and show a strategy for imputing missing data**
+> #### **Interval Contains the maximum average steps.**
+
+```{r maxavge}
+
+                      print(as.data.frame(max_row))
+
+```
+
+> #### **Code to describe and show a strategy for imputing missing data**
 
 ```{r NAValues}
-                 sum(is.na(activity_dta))
+                      sum(is.na(activity_dta))
 
 ```
 
-## Are there differences in activity patterns between weekdays and weekends?
+> #### **Are there differences in activity patterns between weekdays and weekends?**
+
+```{r weeksplit}
+# split weekend and weekdays activities
+
+                  actByDay <- activity_dta 
+                  actByDay$Type <- 0
+                  
+                  for(i in 1:length(actByDay$date)) {
+                     actByDay$Type[i] <- ifelse(weekdays(as.Date(actByDay$date[i])) %in% 
+                                                        c("Saturday", "Sunday"), "WeekEnd", "WeekDay")
+                                  }
+                  
+                
+                actByDay <- actByDay %>% 
+                                    na.omit() %>%
+                              group_by(interval, Type) %>%
+                                        summarize(daily_avge = mean(steps)) 
+                
+                ggplot(actByDay,
+                      aes(x=`interval`)) +
+                      geom_line(aes(y=daily_avge)) +
+                      facet_grid(Type ~ .)
+              
+```

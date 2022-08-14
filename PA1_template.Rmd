@@ -6,7 +6,6 @@ output:
     keep_md: true
   pdf_document: default
 ---
-
 #### *Loading required libraries* 
 
 ```{r packages, echo=TRUE, warning=FALSE, message=FALSE}

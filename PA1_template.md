@@ -1,6 +1,6 @@
 ---
-title:  "Reproducible Research"
-subtitle: "JHU | Peer Assessment-1"
+title:    "<center> Reproducible Research </center> "
+subtitle: "<center> JHU | Peer Assessment-1 </center> "
 output:
   html_document:
     keep_md: true
